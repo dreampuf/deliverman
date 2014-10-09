@@ -62,6 +62,14 @@ class LDAPBackend(object):
             pass
 
     def _user_from_ldap(self, entity, password=None):
+        """
+        from vision import Visicon
+        img = Visicon(ip, str(time()), size).draw_image()
+        temp_img = StringIO()
+        img.save(temp_img, 'png')
+        img_data = temp_img.getvalue()
+        temp_img.close()
+        """
         try:
             user = User.objects.get(username=entity["uid"][0])
             user.first_name = entity["givenName"][0]
