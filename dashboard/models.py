@@ -34,9 +34,3 @@ class Host(BaseModel):
                     related_name="%(class)s_hosts", db_index=False, unique=False)
     roles = models.ManyToManyField(Role)
     variables = models.ManyToManyField(Variable)
-
-def inventories_serialize(envs):
-    pass
-
-def inventories_deserialize(text):
-    pass

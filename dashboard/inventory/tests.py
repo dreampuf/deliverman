@@ -33,12 +33,12 @@ WEB[01:03].domain
 DB[01:10!3:9].domain
 """
 
-
+from dashboard.models import Environment, Role, Host
+from parser import store, deserialize, _ranger, _parse_tuple_item, _host_tuple_item
 
 # Create your tests here.
 class InventoryTest(TestCase):
     def test_parser(self):
-        from parser import deserialize, _ranger, _parse_tuple_item, _host_tuple_item
         self.assertEqual(
             list(_ranger("005", "10", "{:03d}")),
             ["005", "006", "007", "008", "009", "010"]
@@ -63,4 +63,52 @@ class InventoryTest(TestCase):
                  )
             ]
         )
+
+    def test_model_store(self):
+        self.assertEqual(store(deserialize(little_text)), None)
+
+    def test_host_text_change_effect_store(self):
+        text_1 = """
+        [ENV1:GROUP1]
+        WEB[1,2,3].domain
+        DB[01:03].domain
+        [ENV2:GROUP2]
+        DB[5:08].domain
+        """
+        self.assertEqual(store(deserialize(text_1)), None)
+        env1_group1_entities = Host.objects.filter(env__name="ENV1", roles__name="GROUP1")
+        self.assertEqual(
+            map(lambda x: x.name, env1_group1_entities),
+            [
+                u'WEB1.domain', u'WEB2.domain', u'WEB3.domain',
+                u'DB01.domain', u'DB02.domain', u'DB03.domain'
+            ]
+        )
+        # test add a server
+        text_2 = """
+        [ENV1:GROUP1]
+        WEB[1,2,3,4].domain
+        DB[01:03].domain
+        [ENV2:GROUP2]
+        DB[5:08].domain
+        """
+        self.assertEqual(store(deserialize(text_2)), None)
+        env1_group1_entities_new = Host.objects.filter(env__name="ENV1", roles__name="GROUP1")
+        #TODO
+
+        # test move a server
+        text_3 = """
+        [ENV1:GROUP1]
+        WEB[1,2,3].domain
+        DB[01:03].domain
+        [ENV2:GROUP2]
+        WEB[4].domain
+        DB[5:08].domain
+        """
+        self.assertEqual(store(deserialize(text_3)), None)
+        env1_group1_entities_new = Host.objects.filter(env__name="ENV1", roles__name="GROUP1")
+        #TODO
+
+        # test remove a server
+        #TODO
 

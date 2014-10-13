@@ -66,8 +66,8 @@ def host_parse(text):
         parts.append((text[last_pos:],))
     return list(imap(lambda x: "".join(x), (product(*parts))))
 
-def serialize(envs):
-    pass
+def serialize():
+    raise NotImplementedError("using the input text to keep the same text order please")
 
 def deserialize(text):
     for token in parser.lex(text):
@@ -83,4 +83,9 @@ def store(entities):
         if tp == "SECTION":
             envname, groupname = args
             env, _ = Environment.objects.get_or_create(name=envname)
-            role, _ = Role.objects.get_or_create(name=groupname, env__name=env)
+            role, _ = Role.objects.get_or_create(name=groupname)
+        elif tp == "HOST":
+            for hostname in args:
+                host, _ = Host.objects.get_or_create(name=hostname, env=env)
+                host.roles.add(role)
+                host.save()
