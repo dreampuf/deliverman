@@ -18,19 +18,22 @@ class BaseModel(models.Model):
         return self.name
 
 class Environment(BaseModel):
-    name = models.CharField(_('name'), max_length=20, db_index=True)
+    name = models.CharField(_('name'), max_length=20, primary_key=True, db_index=True)
     domain = models.CharField(_('domain'), max_length=50, db_index=True)
+    is_enabled = models.BooleanField(default=True, db_index=True)
 
 class Role(BaseModel):
-    name = models.CharField(_('name'), max_length=20, db_index=True)
+    name = models.CharField(_('name'), max_length=20, primary_key=True, db_index=True)
+    is_enabled = models.BooleanField(default=True, db_index=True)
 
 class Variable(BaseModel):
     name = models.CharField(_('name'), max_length=50, db_index=True)
     value = models.CharField(_('value'), max_length=255, blank=True, null=True)
 
 class Host(BaseModel):
-    name = models.CharField(_('name'), max_length=255, db_index=True)
+    name = models.CharField(_('name'), max_length=255, primary_key=True, db_index=True)
     env = models.ForeignKey(Environment, verbose_name=_('env'),
-                    related_name="%(class)s_hosts", db_index=False, unique=False)
-    roles = models.ManyToManyField(Role)
+                    related_name="%(class)ss", db_index=False, unique=False)
+    roles = models.ManyToManyField(Role, related_name="%(class)ss")
     variables = models.ManyToManyField(Variable)
+    is_enabled = models.BooleanField(default=True, db_index=True)

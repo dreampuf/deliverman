@@ -35,6 +35,7 @@ def _parse_tuple_item(sub_text, pad=0):
             yield number_formater.format(int(el))
 
 def _host_tuple_item(text):
+    """ 01:10!03:08 -> 01,02,04,09,10 """
     if SIGN_EXCLUDE in text:
         include, exclude = text.split("!", 1)
     else:
@@ -78,14 +79,38 @@ def deserialize(text):
         elif token.type == "HOST":
             yield "HOST", host_parse(token.value)
 
-def store(entities):
+def store_from_parsed(entities):
+    """
+    Storing the entities
+    also maintain the exists entities in the DB and disbale them (is_enabled=False)
+    """
+    opted_envs = set()
+    opted_roles = set()
+    opted_hosts = set()
+
+    # Clean the role relationship
+    Host.roles.through.objects.all().delete()
+
     for tp, args in entities:
         if tp == "SECTION":
             envname, groupname = args
             env, _ = Environment.objects.get_or_create(name=envname)
+            opted_envs.add(env.name)
             role, _ = Role.objects.get_or_create(name=groupname)
+            opted_roles.add(role.name)
         elif tp == "HOST":
             for hostname in args:
-                host, _ = Host.objects.get_or_create(name=hostname, env=env)
+                host = Host.objects.filter(name=hostname).first()
+                if host is None:
+                    host = Host(name=hostname, env=env)
+                host.env = env
                 host.roles.add(role)
                 host.save()
+                opted_hosts.add(host.name)
+
+    Environment.objects.exclude(name__in=opted_envs).update(is_enabled=False)
+    Role.objects.exclude(name__in=opted_roles).update(is_enabled=False)
+    Host.objects.exclude(name__in=opted_hosts).update(is_enabled=False)
+
+def store(text):
+    return store_from_parsed(deserialize(text))

@@ -65,7 +65,7 @@ class InventoryTest(TestCase):
         )
 
     def test_model_store(self):
-        self.assertEqual(store(deserialize(little_text)), None)
+        self.assertEqual(store(little_text), None)
 
     def test_host_text_change_effect_store(self):
         text_1 = """
@@ -75,7 +75,7 @@ class InventoryTest(TestCase):
         [ENV2:GROUP2]
         DB[5:08].domain
         """
-        self.assertEqual(store(deserialize(text_1)), None)
+        self.assertEqual(store(text_1), None)
         env1_group1_entities = Host.objects.filter(env__name="ENV1", roles__name="GROUP1")
         self.assertEqual(
             map(lambda x: x.name, env1_group1_entities),
@@ -84,6 +84,7 @@ class InventoryTest(TestCase):
                 u'DB01.domain', u'DB02.domain', u'DB03.domain'
             ]
         )
+        origin_entities = [i.name for i in env1_group1_entities]
         # test add a server
         text_2 = """
         [ENV1:GROUP1]
@@ -92,9 +93,22 @@ class InventoryTest(TestCase):
         [ENV2:GROUP2]
         DB[5:08].domain
         """
-        self.assertEqual(store(deserialize(text_2)), None)
-        env1_group1_entities_new = Host.objects.filter(env__name="ENV1", roles__name="GROUP1")
-        #TODO
+        self.assertEqual(store(text_2), None)
+        env1_group1_entities2 = Host.objects.filter(env__name="ENV1", roles__name="GROUP1").all()
+        #import ipdb; ipdb.set_trace()
+        self.assertEqual(
+            map(lambda x: x.name, env1_group1_entities2),
+            [
+                u'WEB1.domain', u'WEB2.domain', u'WEB3.domain',
+                u'DB01.domain', u'DB02.domain', u'DB03.domain', u'WEB4.domain'
+            ]
+        )
+        # make sure the id is not change
+        self.assertItemsEqual(
+            origin_entities + [u'WEB4.domain'],
+            [i.name for i in env1_group1_entities2]
+        )
+        origin_web4 = Host.objects.filter(name=u'WEB4.domain').first()
 
         # test move a server
         text_3 = """
@@ -105,10 +119,28 @@ class InventoryTest(TestCase):
         WEB[4].domain
         DB[5:08].domain
         """
-        self.assertEqual(store(deserialize(text_3)), None)
-        env1_group1_entities_new = Host.objects.filter(env__name="ENV1", roles__name="GROUP1")
-        #TODO
+        self.assertEqual(store(text_3), None)
+        env1_group1_entities3 = Host.objects.filter(env__name="ENV1", roles__name="GROUP1")
+        self.assertEqual(
+            map(lambda x: x.name, env1_group1_entities3),
+            [
+                u'WEB1.domain', u'WEB2.domain', u'WEB3.domain',
+                u'DB01.domain', u'DB02.domain', u'DB03.domain'
+            ]
+        )
+        new_web4 = Host.objects.filter(name=u'WEB4.domain').first()
+        self.assertEqual(origin_web4.name, new_web4.name)
 
         # test remove a server
-        #TODO
+        text_4 = """
+        [ENV1:GROUP1]
+        WEB[1,2,3].domain
+        DB[01:03].domain
+        [ENV2:GROUP2]
+        DB[5:08].domain
+        """
+        self.assertEqual(store(text_4), None)
+        self.assertEqual(len(Host.objects.filter(is_enabled=True).all()), 10)
+        removed_web4 = Host.objects.filter(name=u'WEB4.domain').first()
+        self.assertEqual(removed_web4.is_enabled, False)
 
