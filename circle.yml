@@ -1,0 +1,6 @@
+machine:
+  python:
+    version: 2.7.8
+checkout:
+  post:
+    - cp deliverman/settings.py{.example,}
