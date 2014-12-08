@@ -1,6 +1,6 @@
 # Introduction
 
-DeliverMan is a web portal for [Fabric](http://www.fabfile.org/).
+DeliverMan is a web portal for [Fabric](http://www.fabfile.org/). [![Circle CI](https://circleci.com/gh/dreampuf/deliverman.svg?style=svg)](https://circleci.com/gh/dreampuf/deliverman)
 
 # Features
 
@@ -10,6 +10,9 @@ DeliverMan is a web portal for [Fabric](http://www.fabfile.org/).
 
 # Installation Step
 
+    # checkout static files
+    git submodule init
+    git submodule update
     # using your python environment
     pip install -r requirements.txt
     ./manage.py syncdb
