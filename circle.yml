@@ -4,3 +4,12 @@ machine:
 checkout:
   post:
     - cp deliverman/settings.py{.example,}
+test:
+  override:
+    - coverage run --source="." manage.py test
+  post:
+    - coverage html -d coverage_output
+
+general:
+  artifacts:
+    - "coverage_output" #coverage html report
