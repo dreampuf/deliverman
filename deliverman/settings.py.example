@@ -94,7 +94,7 @@ LDAP_HOST = "LDAP_HOST"
 LDAP_DN = "LDAP_DN"
 LDAP_PASSWORD = "LDAP_PASSWORD"
 LDAP_BN = "LDAP_BN"
-LDAP_UID = "LDAP_UID={user}"
+LDAP_UID = "cn={user}"
 
 # Custom User Models
 #AUTHENTICATION_BACKENDS = ("accounts.admin.LDAPBackend", )

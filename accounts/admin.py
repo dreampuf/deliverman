@@ -34,15 +34,16 @@ class LDAPBackend(object):
         with simpleldap.Connection(settings.LDAP_HOST) as conn:
             login_valid = conn.authenticate(dn="%s,%s" % (settings.LDAP_UID.format(user=username), settings.LDAP_BN), password=password)
         if login_valid is False:
-            self._set_inactive(username)
+            self._set_active(username, False)
             return None
 
         with simpleldap.Connection(settings.LDAP_HOST, dn=settings.LDAP_DN, password=settings.LDAP_PASSWORD) as conn:
             try:
                 rets = conn.search("(%s)" % (settings.LDAP_UID.format(user=username), ) , base_dn=settings.LDAP_BN)
             except simpleldap.ObjectNotFound:
-                self._set_inactive(username)
+                self._set_active(username, False)
                 return None
+            self._set_active(username, True)
             ldap_user = rets[0]
         user = self._user_from_ldap(ldap_user, password)
         return user
@@ -53,10 +54,10 @@ class LDAPBackend(object):
         except User.DoesNotExist:
             return None
 
-    def _set_inactive(self, username):
+    def _set_active(self, username, is_active=False):
         try:
             user = User.objects.get(username=username)
-            user.is_active = False
+            user.is_active = is_active
             user.save()
         except User.DoesNotExist:
             pass
