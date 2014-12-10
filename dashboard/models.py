@@ -22,9 +22,16 @@ class Environment(BaseModel):
     domain = models.CharField(_('domain'), max_length=50, db_index=True)
     is_enabled = models.BooleanField(default=True, db_index=True)
 
+    class META(object):
+        ordering = ["name"]
+
+
 class Role(BaseModel):
     name = models.CharField(_('name'), max_length=20, primary_key=True, db_index=True)
     is_enabled = models.BooleanField(default=True, db_index=True)
+
+    class META(object):
+        ordering = ["name"]
 
 class Variable(BaseModel):
     name = models.CharField(_('name'), max_length=50, db_index=True)
@@ -37,3 +44,6 @@ class Host(BaseModel):
     roles = models.ManyToManyField(Role, related_name="%(class)ss")
     variables = models.ManyToManyField(Variable)
     is_enabled = models.BooleanField(default=True, db_index=True)
+
+    class META(object):
+        ordering = ["name"]

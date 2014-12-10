@@ -34,7 +34,8 @@ DB[01:10!3:9].domain
 """
 
 from dashboard.models import Environment, Role, Host
-from parser import store, deserialize, _ranger, _parse_tuple_item, _host_tuple_item
+from parser import store, deserialize, _ranger, _parse_tuple_item, _host_tuple_item, \
+                   serialize, cluster_hostname, _cluster_tuple
 
 # Create your tests here.
 class InventoryTest(TestCase):
@@ -64,8 +65,42 @@ class InventoryTest(TestCase):
             ]
         )
 
+    def test_cluster_hostname(self):
+        self.assertEqual(
+            list(cluster_hostname([
+                u'DB01.01domain', u'DB01.02domain', u'DB01.03domain',
+                u'DB02.01domain', u'DB02.03domain', u'DB02.04domain',
+                u'DB03.01domain', u'DB03.02domain', u'DB03.3domain',
+                u'WEB01.domain', u'WEB02.domain', u'WEB03.domain'
+            ])),
+            [
+                u"DB[01:03].[01:04]domain",
+                u"WEB[01:03].domain"
+            ]
+        )
+
+        self.assertEqual(
+                list(_cluster_tuple([u'01', u'02', u'03', u'04'])),
+                ['01:04'],
+            )
+        self.assertEqual(
+                list(_cluster_tuple([u'01', u'03', u'04'])),
+                ["01", "03,04"],
+            )
+        self.assertEqual(
+                list(_cluster_tuple([u'01', u'05', u'06', u'07', u'08', u'09', u'11'])),
+                ['01', '05:09', '11'],
+            )
+
     def test_model_store(self):
         self.assertEqual(store(little_text), None)
+
+    def test_serialize(self):
+        self.assertEqual(u"\n".join(serialize()).strip(),
+u"""[ENV01:GROUP01]
+DB[01,02,10].domain
+WEB[01:03].domain"""
+        )
 
     def test_host_text_change_effect_store(self):
         text_1 = """
@@ -95,7 +130,6 @@ class InventoryTest(TestCase):
         """
         self.assertEqual(store(text_2), None)
         env1_group1_entities2 = Host.objects.filter(env__name="ENV1", roles__name="GROUP1").all()
-        #import ipdb; ipdb.set_trace()
         self.assertEqual(
             map(lambda x: x.name, env1_group1_entities2),
             [

@@ -1,0 +1,6 @@
+{% load tags %}
+<li class="{% active request viewname %}">
+    <a href="{% url viewname %}">
+        <i class="fa {{ icon }}"></i> <span>{{ name }}</span>
+    </a>
+</li>
