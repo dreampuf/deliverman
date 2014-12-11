@@ -23,10 +23,10 @@ class LDAPBackend(object):
 
     Use the login name, and a hash of the password. For example:
 
-    LDAP_HOST = "pekdc01.freewheelmedia.net"
-    LDAP_DN = "cn=readonly,dc=freewheelmedia,dc=net"
-    LDAP_PASSWORD = "XXX"
-    LDAP_BN = "ou=User Accounts,dc=freewheelmedia,dc=net"
+    LDAP_HOST = "LDAP_HOST"
+    LDAP_DN = "LDAP_DN"
+    LDAP_PASSWORD = "LDAP_PASSWORD"
+    LDAP_BN = "LDAP_BN"
     LDAP_UID = "cn={user}"
     """
 
