@@ -24,7 +24,7 @@
             <form action="{% url "accounts.login" %} " method="post">
                 {% csrf_token %}
                 <div class="body bg-gray">
-                    {{ erros }}
+                    {{ form.errors }}
                     <div class="form-group">
                         <input type="text" name="username" class="form-control" placeholder="User ID"/>
                     </div>

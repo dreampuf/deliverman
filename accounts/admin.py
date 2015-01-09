@@ -1,21 +1,16 @@
+from datetime import datetime
+from cStringIO import StringIO
+
+from django.conf import settings
 from django.contrib import admin
-
-# Register your models here.
-from django import forms
-from django.contrib import admin
-from django.contrib.auth.models import Group
-from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth.forms import ReadOnlyPasswordHashField
-
-#from accounts.models import User, UserManager
-
-#admin.site.register(UserManager, User)
-# unregister the Group model from admin.
-#admin.site.unregister(Group)
+from django.contrib.auth import forms
+from django.contrib.auth import admin as auth_admin
+from django.core.files.uploadedfile import InMemoryUploadedFile
 
 import simpleldap
-from django.conf import settings
-from django.contrib.auth.models import User, check_password
+from PIL import Image
+
+from accounts.models import User
 
 class LDAPBackend(object):
     """
@@ -63,36 +58,73 @@ class LDAPBackend(object):
             pass
 
     def _user_from_ldap(self, entity, password=None):
-        """
-        from vision import Visicon
-        img = Visicon(ip, str(time()), size).draw_image()
-        temp_img = StringIO()
-        img.save(temp_img, 'png')
-        img_data = temp_img.getvalue()
-        temp_img.close()
-        """
+        is_new = False
         try:
             user = User.objects.get(username=entity["uid"][0])
-            user.first_name = entity["givenName"][0]
-            if password and user.check_password(password) is False:
-                user.set_password(password)
-            user.is_staff = True
-            for k, kmap in (
-                    ("first_name", "givenName"),
-                    ("last_name", "sn"),
-                    ("email", "mail"),
-                    ):
-                val = entity.get(kmap)
-                if not val:
-                    continue
-                setattr(user, k, val[0])
-            user.save()
-            return user
         except User.DoesNotExist:
+            is_new = True
             user = User(username=entity["uid"][0])
-            user.set_password(password)
             user.is_staff = True
             user.is_superuser = False
             user.save()
+
+        if password and user.check_password(password) is False:
+            user.set_password(password)
+        user.is_staff = True
+        for k, kmap in (
+                ("first_name", "givenName"),
+                ("last_name", "sn"),
+                ("email", "mail"),
+                ("gid", "gidnumber"),
+                ("uid", "uidnumber"),
+                ("date_joined", "whencreated"),
+                ("country", "co"),
+                ("department", "department"),
+                ("photo", "thumbnailphoto"),
+                ):
+            if k == "date_joined":
+                val = datetime.strptime(entity.get(kmap)[0][:-3], "%Y%m%d%H%M%S")
+            elif k == "photo" and is_new == True:
+                photo_data = entity.get(kmap)[0]
+                photo_io_origin = StringIO(photo_data)
+                photo_img = Image.open(photo_io_origin)
+                photo_side = min(photo_img.size)
+                photo_croped = photo_img.crop((0, 0, photo_side, photo_side))
+                photo_croped.thumbnail(settings.THUMBNAIL_SIZE_HEAD, Image.ANTIALIAS)
+                photo_io_processed = StringIO()
+                photo_croped.save(photo_io_processed, 'png')
+                photo_io_origin.close()
+                photo_io_processed.seek(0)
+
+                val = InMemoryUploadedFile(
+                        photo_io_processed,
+                        None,
+                        "{0}_{1}.png".format(user.first_name.lower(), user.last_name.lower()),
+                        "image/png",
+                        len(photo_data),
+                        None
+                    )
+            else:
+                val = entity.get(kmap)[0]
+            if not val:
+                continue
+            setattr(user, k, val)
+        user.save()
         return user
+
+class UserCreationForm(forms.UserChangeForm):
+    class Meta:
+        model = User
+        fields = ("username",)
+
+class UserChangeForm(forms.UserChangeForm):
+    class Meta:
+        model = User
+        fields = '__all__'
+
+class UserAdmin(auth_admin.UserAdmin):
+    form = UserChangeForm
+    add_form = UserCreationForm
+
+admin.site.register(User, UserAdmin)
 

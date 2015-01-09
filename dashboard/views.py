@@ -14,6 +14,7 @@ class BaseView(TemplateView):
 class IndexView(BaseView):
     template_name = "index.html"
     def get(self, request, *args, **kwargs):
+        print request.user.get_full_name()
         return super(IndexView, self).get(request, *args, **kwargs)
 
 class DeployView(BaseView):
@@ -29,5 +30,5 @@ class InventoryView(BaseView):
         return super(InventoryView, self).post(request, *args, **kwargs)
 
 
-class ProjectView(BaseView):
-    template_name = "index.html"
+class ApplicationView(BaseView):
+    template_name = "application.html"
