@@ -1,5 +1,5 @@
 django>=1.7.0
 PlyPlus
 simpleldap
-
+Pillow
 coverage
